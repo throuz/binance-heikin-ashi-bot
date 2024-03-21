@@ -6,10 +6,10 @@
     "technicalindicators": "^3.1.0"
   },
   "scripts": {
-    "app:dev": "TZ=Asia/Taipei NODE_ENV=development node app",
-    "app:prod": "TZ=Asia/Taipei NODE_ENV=production node app",
-    "test:dev": "TZ=Asia/Taipei NODE_ENV=development node test",
-    "test:prod": "TZ=Asia/Taipei NODE_ENV=production node test"
+    "app:mock": "TZ=Asia/Taipei NODE_ENV=mock node app",
+    "app:real": "TZ=Asia/Taipei NODE_ENV=real node app",
+    "test:mock": "TZ=Asia/Taipei NODE_ENV=mock node test",
+    "test:real": "TZ=Asia/Taipei NODE_ENV=real node test"
   },
   "type": "module"
 }
