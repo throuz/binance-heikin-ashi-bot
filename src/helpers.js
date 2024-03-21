@@ -34,13 +34,13 @@ export const getAvailableBalance = async () => {
   return availableBalance;
 };
 
-export const getMarkPrice = async () => {
+const getMarkPrice = async () => {
   const totalParams = { symbol: SYMBOL };
   const markPrice = await markPriceAPI(totalParams);
   return markPrice.markPrice;
 };
 
-export const getAvailableQuantity = async () => {
+const getAvailableQuantity = async () => {
   const [availableBalance, markPrice] = await Promise.all([
     getAvailableBalance(),
     getMarkPrice()
@@ -55,7 +55,7 @@ export const getPositionInformation = async () => {
   return positionInformation[0];
 };
 
-export const getAllowableQuantity = async () => {
+const getAllowableQuantity = async () => {
   const [positionInformation, markPrice] = await Promise.all([
     getPositionInformation(),
     getMarkPrice()
@@ -65,7 +65,7 @@ export const getAllowableQuantity = async () => {
   return maxAllowableQuantity - Math.abs(positionAmt);
 };
 
-export const getInvestableQuantity = async () => {
+const getInvestableQuantity = async () => {
   const [availableQuantity, allowableQuantity] = await Promise.all([
     getAvailableQuantity(),
     getAllowableQuantity()
@@ -73,7 +73,7 @@ export const getInvestableQuantity = async () => {
   return Math.min(availableQuantity, allowableQuantity);
 };
 
-export const getAllPositionInformation = async () => {
+const getAllPositionInformation = async () => {
   const totalParams = { timestamp: Date.now() };
   const positionInformation = await positionInformationAPI(totalParams);
   return positionInformation;
@@ -116,7 +116,7 @@ export const getHeikinAshiKlineData = async (interval = KLINE_INTERVAL) => {
   });
 };
 
-export const getPrecisionBySize = (size) => {
+const getPrecisionBySize = (size) => {
   if (size === "1") {
     return 0;
   } else {
