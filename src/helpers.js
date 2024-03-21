@@ -1,4 +1,5 @@
 import {
+  LEVERAGE,
   ORDER_AMOUNT_PERCENT,
   QUOTE_ASSET,
   KLINE_INTERVAL
@@ -7,27 +8,16 @@ import {
   exchangeInformationAPI,
   futuresAccountBalanceAPI,
   markPriceAPI,
-  notionalAndLeverageBracketsAPI,
   positionInformationAPI,
+  klineDataAPI,
   markPriceKlineDataAPI
 } from "./api.js";
 import { heikinashi } from "technicalindicators";
-import { getStorageData } from "../storage/storage.js";
-
-export const getMaxLeverage = async () => {
-  const symbol = await getStorageData("symbol");
-  const totalParams = { symbol, timestamp: Date.now() };
-  const notionalAndLeverageBrackets = await notionalAndLeverageBracketsAPI(
-    totalParams
-  );
-  return notionalAndLeverageBrackets[0].brackets[0].initialLeverage;
-};
 
 export const getStepSize = async () => {
   const exchangeInformation = await exchangeInformationAPI();
-  const symbol = await getStorageData("symbol");
   const symbolData = exchangeInformation.symbols.find(
-    (item) => item.symbol === symbol
+    (item) => item.symbol === SYMBOL
   );
   const stepSize = symbolData.filters.find(
     (filter) => filter.filterType === "LOT_SIZE"
@@ -45,33 +35,24 @@ export const getAvailableBalance = async () => {
 };
 
 export const getMarkPrice = async () => {
-  const symbol = await getStorageData("symbol");
-  const totalParams = { symbol };
+  const totalParams = { symbol: SYMBOL };
   const markPrice = await markPriceAPI(totalParams);
   return markPrice.markPrice;
 };
 
 export const getAvailableQuantity = async () => {
-  const [availableBalance, maxLeverage, markPrice] = await Promise.all([
+  const [availableBalance, markPrice] = await Promise.all([
     getAvailableBalance(),
-    getMaxLeverage(),
     getMarkPrice()
   ]);
-  const availableFunds = availableBalance * maxLeverage;
+  const availableFunds = availableBalance * LEVERAGE;
   return availableFunds / markPrice;
 };
 
 export const getPositionInformation = async () => {
-  const symbol = await getStorageData("symbol");
-  const totalParams = { symbol, timestamp: Date.now() };
+  const totalParams = { symbol: SYMBOL, timestamp: Date.now() };
   const positionInformation = await positionInformationAPI(totalParams);
   return positionInformation[0];
-};
-
-export const getPNLPercent = async () => {
-  const positionInformation = await getPositionInformation();
-  const { unRealizedProfit, notional, leverage } = positionInformation;
-  return (unRealizedProfit / (Math.abs(notional) / leverage)) * 100;
 };
 
 export const getAllowableQuantity = async () => {
@@ -109,27 +90,19 @@ export const getOrderQuantity = async () => {
   return orderQuantity;
 };
 
-export const getRandomSymbol = async () => {
-  const exchangeInformation = await exchangeInformationAPI();
-  const symbols = exchangeInformation.symbols.filter(
-    (item) =>
-      item.contractType === "PERPETUAL" &&
-      item.status === "TRADING" &&
-      item.quoteAsset === QUOTE_ASSET &&
-      item.symbol !== "USDCUSDT"
-  );
-  const randomIndex = Math.floor(Math.random() * symbols.length);
-  return symbols[randomIndex].symbol;
+export const getKlineData = async () => {
+  const totalParams = { symbol: SYMBOL, interval: KLINE_INTERVAL };
+  const klineData = await klineDataAPI(totalParams);
+  return klineData;
 };
 
 export const getMarkPriceKlineData = async (interval = KLINE_INTERVAL) => {
-  const symbol = await getStorageData("symbol");
-  const totalParams = { symbol, interval };
+  const totalParams = { symbol: SYMBOL, interval };
   const markPriceKlineData = await markPriceKlineDataAPI(totalParams);
   return markPriceKlineData;
 };
 
-export const getHeikinAshiKLineData = async (interval = KLINE_INTERVAL) => {
+export const getHeikinAshiKlineData = async (interval = KLINE_INTERVAL) => {
   const markPriceKlineData = await getMarkPriceKlineData(interval);
   const openPrices = markPriceKlineData.map((kline) => Number(kline[1]));
   const highPrices = markPriceKlineData.map((kline) => Number(kline[2]));

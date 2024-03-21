@@ -13,7 +13,7 @@ export const logWithTime = (msg) => {
   console.log(`${msg} [${new Date().toLocaleString()}]`);
 };
 
-export const stringifySafe = (obj) => {
+const stringifySafe = (obj) => {
   const seen = new Set();
   return JSON.stringify(obj, (_key, value) => {
     if (typeof value === "object" && value !== null) {
