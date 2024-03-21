@@ -1,6 +1,6 @@
-# Binance Fibonacci BOT
+# Binance Heikin-Ashi BOT
 
-Binance Fibonacci BOT is built based on the Fibonacci retracement strategy.
+Binance Heikin-Ashi BOT is an automated trading program based on Heikin-Ashi.
 
 ## DISCLAIMER: Use at your own risk.
 
@@ -14,25 +14,25 @@ Install all dependencies.
 npm i
 ```
 
-Create `configs/env-config-dev.js` or `configs/env-config-prod.js`, please refer to the `configs/env-config-example.js` content.
+Create `configs/env-config-mock.js` or `configs/env-config-real.js`, please refer to the `configs/env-config-example.js` content.
 
 Trading parameters can be modified in `configs/trade-config.js`.
 
-This command for `configs/env-config-dev.js`
+This command for mock trading.
 
 ```
-npm run start:dev
+npm run app:mock
 ```
 
-This command for `configs/env-config-prod.js`
+This command for real trading.
 
 ```
-npm run start:prod
+npm run app:real
 ```
 
 ## Strategy
 
-This robot will randomly select a trading pair and automatically determine whether it meets the conditions for opening a position. When opening a position, it will set a take profit & stop loss orders based on Fibonacci retracement.
+This robot will determine whether to place a trade based on Heikin-Ashi and volume.
 
 ## Contributing
 
