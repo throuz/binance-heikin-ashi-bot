@@ -36,4 +36,4 @@ const executeTradingStrategy = async () => {
   }
 };
 
-schedule.scheduleJob("0 * * * *", executeTradingStrategy);
+schedule.scheduleJob("1 * * * *", executeTradingStrategy);
