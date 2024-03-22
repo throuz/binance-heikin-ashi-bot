@@ -1,7 +1,6 @@
 import {
   SYMBOL,
   LEVERAGE,
-  ORDER_AMOUNT_PERCENT,
   QUOTE_ASSET,
   KLINE_INTERVAL
 } from "../configs/trade-config.js";
@@ -85,9 +84,9 @@ export const getHasPositions = async () => {
   return allPositionInformation.some((info) => Math.abs(info.positionAmt) > 0);
 };
 
-export const getOrderQuantity = async () => {
+export const getOrderQuantity = async (orderAmountPercent) => {
   const investableQuantity = await getInvestableQuantity();
-  const orderQuantity = investableQuantity * (ORDER_AMOUNT_PERCENT / 100);
+  const orderQuantity = investableQuantity * (orderAmountPercent / 100);
   return orderQuantity;
 };
 

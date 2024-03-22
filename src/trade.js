@@ -1,6 +1,10 @@
-import { SYMBOL, LEVERAGE } from "../configs/trade-config.js";
+import {
+  SYMBOL,
+  LEVERAGE,
+  ORDER_AMOUNT_PERCENT
+} from "../configs/trade-config.js";
 import { changeInitialLeverageAPI, newOrderAPI } from "./api.js";
-import { sendLineNotify } from "./common.js";
+import { logWithTime, sendLineNotify } from "./common.js";
 import {
   formatBySize,
   getOrderQuantity,
@@ -24,22 +28,36 @@ const newOrder = async (totalParams) => {
   await sendLineNotify(`New order! ${symbol} ${side} ${quantity}`);
 };
 
+const newOpenOrder = async (orderAmountPercent) => {
+  try {
+    const [orderQuantity, stepSize] = await Promise.all([
+      getOrderQuantity(orderAmountPercent),
+      getStepSize()
+    ]);
+    await newOrder({
+      symbol: SYMBOL,
+      side: "BUY",
+      type: "MARKET",
+      quantity: formatBySize(orderQuantity, stepSize),
+      timestamp: Date.now()
+    });
+  } catch (error) {
+    if (error.response && error.response.data.code === -2019) {
+      console.log("orderAmountPercent:", orderAmountPercent);
+      logWithTime(error.response.data.msg);
+      await newOpenOrder(orderAmountPercent - 1);
+    } else {
+      throw error;
+    }
+  }
+};
+
 export const openPosition = async () => {
   const positionInformation = await getPositionInformation();
   if (Number(positionInformation.leverage) !== LEVERAGE) {
     await changeToMaxLeverage();
   }
-  const [orderQuantity, stepSize] = await Promise.all([
-    getOrderQuantity(),
-    getStepSize()
-  ]);
-  await newOrder({
-    symbol: SYMBOL,
-    side: "BUY",
-    type: "MARKET",
-    quantity: formatBySize(orderQuantity, stepSize),
-    timestamp: Date.now()
-  });
+  await newOpenOrder(ORDER_AMOUNT_PERCENT);
   await sendLineNotify("Open position!");
 };
 

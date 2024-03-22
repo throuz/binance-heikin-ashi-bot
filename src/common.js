@@ -1,5 +1,9 @@
 import { lineNotifyAPI } from "./web-services.js";
 
+export const logWithTime = (msg) => {
+  console.log(`${msg} [${new Date().toLocaleString()}]`);
+};
+
 export const sendLineNotify = async (msg, isLogWithTime = true) => {
   if (isLogWithTime) {
     logWithTime(msg);
@@ -7,10 +11,6 @@ export const sendLineNotify = async (msg, isLogWithTime = true) => {
     console.log(msg);
   }
   await lineNotifyAPI.post("/api/notify", { message: msg });
-};
-
-export const logWithTime = (msg) => {
-  console.log(`${msg} [${new Date().toLocaleString()}]`);
 };
 
 const stringifySafe = (obj) => {
