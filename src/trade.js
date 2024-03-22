@@ -16,6 +16,7 @@ const changeToMaxLeverage = async () => {
   const totalParams = {
     symbol: SYMBOL,
     leverage: LEVERAGE,
+    recvWindow: 60000,
     timestamp: Date.now()
   };
   await changeInitialLeverageAPI(totalParams);
@@ -39,6 +40,7 @@ const newOpenOrder = async (orderAmountPercent) => {
       side: "BUY",
       type: "MARKET",
       quantity: formatBySize(orderQuantity, stepSize),
+      recvWindow: 60000,
       timestamp: Date.now()
     });
   } catch (error) {
@@ -71,6 +73,7 @@ export const closePosition = async () => {
       side: "SELL",
       type: "MARKET",
       quantity: amount,
+      recvWindow: 60000,
       timestamp: Date.now()
     });
     await sendLineNotify("Close position!");

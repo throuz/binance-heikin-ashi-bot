@@ -26,7 +26,7 @@ export const getStepSize = async () => {
 };
 
 export const getAvailableBalance = async () => {
-  const totalParams = { timestamp: Date.now() };
+  const totalParams = { recvWindow: 60000, timestamp: Date.now() };
   const futuresAccountBalance = await futuresAccountBalanceAPI(totalParams);
   const availableBalance = futuresAccountBalance.find(
     ({ asset }) => asset === QUOTE_ASSET
@@ -50,7 +50,11 @@ const getAvailableQuantity = async () => {
 };
 
 export const getPositionInformation = async () => {
-  const totalParams = { symbol: SYMBOL, timestamp: Date.now() };
+  const totalParams = {
+    symbol: SYMBOL,
+    recvWindow: 60000,
+    timestamp: Date.now()
+  };
   const positionInformation = await positionInformationAPI(totalParams);
   return positionInformation[0];
 };
@@ -74,7 +78,7 @@ const getInvestableQuantity = async () => {
 };
 
 const getAllPositionInformation = async () => {
-  const totalParams = { timestamp: Date.now() };
+  const totalParams = { recvWindow: 60000, timestamp: Date.now() };
   const positionInformation = await positionInformationAPI(totalParams);
   return positionInformation;
 };
