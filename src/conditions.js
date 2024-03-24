@@ -7,12 +7,12 @@ import { getKlineData, getHeikinAshiKlineData } from "./helpers.js";
 
 // Open conditions
 
-const getIsPreviousKlineUpward = async () => {
+const getIsPrevKlineUpward = async () => {
   const { open, close } = await getHeikinAshiKlineData();
   return close[close.length - 2] > open[open.length - 2];
 };
 
-const getIsPreviousVolumeBelowAverage = async () => {
+const getIsPrevVolumeBelowAverage = async () => {
   const klineData = await getKlineData();
   const volumeArray = klineData.map((kline) => Number(kline[5]));
   const previousVolume = volumeArray[volumeArray.length - 2];
@@ -22,7 +22,7 @@ const getIsPreviousVolumeBelowAverage = async () => {
   return previousVolume < averageVolume * (1 - AVERAGE_VOLUME_THRESHOLD_FACTOR);
 };
 
-const getIsPreviousLongTermKlineUpward = async () => {
+const getIsPrevLongTermKlineUpward = async () => {
   const { open, close } = await getHeikinAshiKlineData(
     LONG_TERM_KLINE_INTERVAL
   );
@@ -31,21 +31,21 @@ const getIsPreviousLongTermKlineUpward = async () => {
 
 export const getIsOpenConditionsMet = async () => {
   const results = await Promise.all([
-    getIsPreviousKlineUpward(),
-    getIsPreviousVolumeBelowAverage(),
-    getIsPreviousLongTermKlineUpward()
+    getIsPrevKlineUpward(),
+    getIsPrevVolumeBelowAverage(),
+    getIsPrevLongTermKlineUpward()
   ]);
   return results.every((result) => result);
 };
 
 // Close conditions
 
-const getIsPreviousKlineDownward = async () => {
+const getIsPrevKlineDownward = async () => {
   const { open, close } = await getHeikinAshiKlineData();
   return close[close.length - 2] < open[open.length - 2];
 };
 
-const getIsPreviousVolumeAboveAverage = async () => {
+const getIsPrevVolumeAboveAverage = async () => {
   const klineData = await getKlineData();
   const volumeArray = klineData.map((kline) => Number(kline[5]));
   const previousVolume = volumeArray[volumeArray.length - 2];
@@ -55,25 +55,35 @@ const getIsPreviousVolumeAboveAverage = async () => {
   return previousVolume > averageVolume * (1 + AVERAGE_VOLUME_THRESHOLD_FACTOR);
 };
 
-const getIsPreviousLongTermKlineDownward = async () => {
+const getIsPrevLongTermKlineDownward = async () => {
   const { open, close } = await getHeikinAshiKlineData(
     LONG_TERM_KLINE_INTERVAL
   );
   return close[close.length - 2] < open[open.length - 2];
 };
 
+const getIsPrevPrevLongTermKlineDownward = async () => {
+  const { open, close } = await getHeikinAshiKlineData(
+    LONG_TERM_KLINE_INTERVAL
+  );
+  return close[close.length - 3] < open[open.length - 3];
+};
+
 export const getIsCloseConditionsMet = async () => {
   const [
-    isPreviousKlineDownward,
-    isPreviousVolumeAboveAverage,
-    isPreviousLongTermKlineDownward
+    isPrevKlineDownward,
+    isPrevVolumeAboveAverage,
+    isPrevLongTermKlineDownward,
+    isPrevPrevLongTermKlineDownward
   ] = await Promise.all([
-    getIsPreviousKlineDownward(),
-    getIsPreviousVolumeAboveAverage(),
-    getIsPreviousLongTermKlineDownward()
+    getIsPrevKlineDownward(),
+    getIsPrevVolumeAboveAverage(),
+    getIsPrevLongTermKlineDownward(),
+    getIsPrevPrevLongTermKlineDownward()
   ]);
   return (
-    (isPreviousKlineDownward && isPreviousVolumeAboveAverage) ||
-    isPreviousLongTermKlineDownward
+    (isPrevKlineDownward && isPrevVolumeAboveAverage) ||
+    (isPrevKlineDownward && isPrevPrevLongTermKlineDownward) ||
+    isPrevLongTermKlineDownward
   );
 };
