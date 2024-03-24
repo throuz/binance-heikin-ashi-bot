@@ -62,28 +62,18 @@ const getIsPrevLongTermKlineDownward = async () => {
   return close[close.length - 2] < open[open.length - 2];
 };
 
-const getIsPrevPrevLongTermKlineDownward = async () => {
-  const { open, close } = await getHeikinAshiKlineData(
-    LONG_TERM_KLINE_INTERVAL
-  );
-  return close[close.length - 3] < open[open.length - 3];
-};
-
 export const getIsCloseConditionsMet = async () => {
   const [
     isPrevKlineDownward,
     isPrevVolumeAboveAverage,
-    isPrevLongTermKlineDownward,
-    isPrevPrevLongTermKlineDownward
+    isPrevLongTermKlineDownward
   ] = await Promise.all([
     getIsPrevKlineDownward(),
     getIsPrevVolumeAboveAverage(),
-    getIsPrevLongTermKlineDownward(),
-    getIsPrevPrevLongTermKlineDownward()
+    getIsPrevLongTermKlineDownward()
   ]);
   return (
     (isPrevKlineDownward && isPrevVolumeAboveAverage) ||
-    (isPrevKlineDownward && isPrevPrevLongTermKlineDownward) ||
     isPrevLongTermKlineDownward
   );
 };
