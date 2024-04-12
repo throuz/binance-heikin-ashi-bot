@@ -1,7 +1,8 @@
 import {
   LONG_TERM_KLINE_INTERVAL,
   AVERAGE_VOLUME_PERIOD,
-  AVERAGE_VOLUME_THRESHOLD_FACTOR
+  AVERAGE_VOLUME_FOR_BUY_FACTORY,
+  AVERAGE_VOLUME_FOR_SELL_FACTORY
 } from "../configs/trade-config.js";
 import { getKlineData, getHeikinAshiKlineData } from "./helpers.js";
 
@@ -19,7 +20,7 @@ const getIsPrevVolumeBelowAverage = async () => {
   const recentVolumeArray = volumeArray.slice(-AVERAGE_VOLUME_PERIOD - 1, -1);
   const sumVolume = recentVolumeArray.reduce((acc, volume) => volume + acc, 0);
   const averageVolume = sumVolume / AVERAGE_VOLUME_PERIOD;
-  return previousVolume < averageVolume * (1 - AVERAGE_VOLUME_THRESHOLD_FACTOR);
+  return previousVolume < averageVolume * AVERAGE_VOLUME_FOR_BUY_FACTORY;
 };
 
 const getIsPrevLongTermKlineUpward = async () => {
@@ -52,7 +53,7 @@ const getIsPrevVolumeAboveAverage = async () => {
   const recentVolumeArray = volumeArray.slice(-AVERAGE_VOLUME_PERIOD - 1, -1);
   const sumVolume = recentVolumeArray.reduce((acc, volume) => volume + acc, 0);
   const averageVolume = sumVolume / AVERAGE_VOLUME_PERIOD;
-  return previousVolume > averageVolume * (1 + AVERAGE_VOLUME_THRESHOLD_FACTOR);
+  return previousVolume > averageVolume * AVERAGE_VOLUME_FOR_SELL_FACTORY;
 };
 
 const getIsPrevLongTermKlineDownward = async () => {
