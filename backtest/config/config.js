@@ -1,4 +1,4 @@
-export const SYMBOL = "BTCUSDT";
+export const SYMBOL = "1000SHIBUSDT";
 export const LONG_TERM_KLINE_INTERVAL = "1d";
 export const KLINE_INTERVAL = "1h";
 export const KLINE_LIMIT = 1500;

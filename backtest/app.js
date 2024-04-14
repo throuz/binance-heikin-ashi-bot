@@ -1,5 +1,5 @@
 import { getBacktestResult } from "./src/backtest.js";
-import { getBestResult } from "./main.js";
+import { avgVolPeriodSetting, getBestResult } from "./main.js";
 
 const bestResult = await getBestResult();
 const {

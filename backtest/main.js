@@ -3,9 +3,9 @@ import { setHistoryData } from "./history/history.js";
 import { SingleBar, Presets } from "cli-progress";
 import { getAddedNumber } from "./src/helpers.js";
 
-const avgVolPeriodSetting = { min: 5, max: 30, step: 1 };
-const entryAvgVolFactorSetting = { min: 0.5, max: 1, step: 0.05 };
-const exitAvgVolFactorSetting = { min: 1, max: 1.5, step: 0.05 };
+export const avgVolPeriodSetting = { min: 5, max: 30, step: 1 };
+export const entryAvgVolFactorSetting = { min: 0.5, max: 1, step: 0.05 };
+export const exitAvgVolFactorSetting = { min: 1, max: 1.5, step: 0.05 };
 
 const getTotalRuns = () => {
   const avgVolPeriodRuns =
