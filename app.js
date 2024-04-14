@@ -1,11 +1,12 @@
 import schedule from "node-schedule";
+import { setDynamicConfig } from "./configs/dynamic-config.js";
 import { errorHandler, logWithTime, sendLineNotify } from "./src/common.js";
-import { getAvailableBalance, getHasPositions } from "./src/helpers.js";
-import { openPosition, closePosition } from "./src/trade.js";
 import {
-  getIsOpenConditionsMet,
-  getIsCloseConditionsMet
+  getIsCloseConditionsMet,
+  getIsOpenConditionsMet
 } from "./src/conditions.js";
+import { getAvailableBalance, getHasPositions } from "./src/helpers.js";
+import { closePosition, openPosition } from "./src/trade.js";
 
 const logBalance = async () => {
   const availableBalance = await getAvailableBalance();
@@ -31,9 +32,12 @@ const executeTradingStrategy = async () => {
         await logBalance();
       }
     }
+    await setDynamicConfig();
   } catch (error) {
     await errorHandler(error);
   }
 };
+
+await setDynamicConfig();
 
 schedule.scheduleJob("1 * * * *", executeTradingStrategy);

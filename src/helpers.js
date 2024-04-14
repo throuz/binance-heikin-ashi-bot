@@ -1,6 +1,6 @@
+import { getDynamicConfig } from "../configs/dynamic-config.js";
 import {
   SYMBOL,
-  LEVERAGE,
   QUOTE_ASSET,
   KLINE_INTERVAL
 } from "../configs/trade-config.js";
@@ -45,7 +45,8 @@ const getAvailableQuantity = async () => {
     getAvailableBalance(),
     getMarkPrice()
   ]);
-  const availableFunds = availableBalance * LEVERAGE;
+  const { leverage } = getDynamicConfig();
+  const availableFunds = availableBalance * leverage;
   return availableFunds / markPrice;
 };
 

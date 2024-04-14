@@ -3,7 +3,3 @@ export const QUOTE_ASSET = "USDT";
 export const ORDER_AMOUNT_PERCENT = 100;
 export const LONG_TERM_KLINE_INTERVAL = "1d";
 export const KLINE_INTERVAL = "1h";
-export const AVERAGE_VOLUME_PERIOD = 13;
-export const AVERAGE_VOLUME_FOR_BUY_FACTORY = 1;
-export const AVERAGE_VOLUME_FOR_SELL_FACTORY = 1.3;
-export const LEVERAGE = 13;

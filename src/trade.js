@@ -1,8 +1,5 @@
-import {
-  SYMBOL,
-  LEVERAGE,
-  ORDER_AMOUNT_PERCENT
-} from "../configs/trade-config.js";
+import { getDynamicConfig } from "../configs/dynamic-config.js";
+import { SYMBOL, ORDER_AMOUNT_PERCENT } from "../configs/trade-config.js";
 import { changeInitialLeverageAPI, newOrderAPI } from "./api.js";
 import { logWithTime, sendLineNotify } from "./common.js";
 import {
@@ -13,14 +10,15 @@ import {
 } from "./helpers.js";
 
 const changeToMaxLeverage = async () => {
+  const { leverage } = getDynamicConfig();
   const totalParams = {
     symbol: SYMBOL,
-    leverage: LEVERAGE,
+    leverage: leverage,
     recvWindow: 60000,
     timestamp: Date.now()
   };
   await changeInitialLeverageAPI(totalParams);
-  await sendLineNotify(`Change To Max Leverage! ${SYMBOL} ${LEVERAGE}`);
+  await sendLineNotify(`Change To Max Leverage! ${SYMBOL} ${leverage}`);
 };
 
 const newOrder = async (totalParams) => {
@@ -56,7 +54,8 @@ const newOpenOrder = async (orderAmountPercent) => {
 
 export const openPosition = async () => {
   const positionInformation = await getPositionInformation();
-  if (Number(positionInformation.leverage) !== LEVERAGE) {
+  const { leverage } = getDynamicConfig();
+  if (Number(positionInformation.leverage) !== leverage) {
     await changeToMaxLeverage();
   }
   await newOpenOrder(ORDER_AMOUNT_PERCENT);

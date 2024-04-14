@@ -1,9 +1,5 @@
-import {
-  LONG_TERM_KLINE_INTERVAL,
-  AVERAGE_VOLUME_PERIOD,
-  AVERAGE_VOLUME_FOR_BUY_FACTORY,
-  AVERAGE_VOLUME_FOR_SELL_FACTORY
-} from "../configs/trade-config.js";
+import { getDynamicConfig } from "../configs/dynamic-config.js";
+import { LONG_TERM_KLINE_INTERVAL } from "../configs/trade-config.js";
 import { getKlineData, getHeikinAshiKlineData } from "./helpers.js";
 
 // Open conditions
@@ -14,13 +10,14 @@ const getIsPrevKlineUpward = async () => {
 };
 
 const getIsPrevVolumeBelowAverage = async () => {
+  const { avgVolPeriod, entryAvgVolFactor } = getDynamicConfig();
   const klineData = await getKlineData();
   const volumeArray = klineData.map((kline) => Number(kline[5]));
   const previousVolume = volumeArray[volumeArray.length - 2];
-  const recentVolumeArray = volumeArray.slice(-AVERAGE_VOLUME_PERIOD - 1, -1);
+  const recentVolumeArray = volumeArray.slice(-avgVolPeriod - 1, -1);
   const sumVolume = recentVolumeArray.reduce((acc, volume) => volume + acc, 0);
-  const averageVolume = sumVolume / AVERAGE_VOLUME_PERIOD;
-  return previousVolume < averageVolume * AVERAGE_VOLUME_FOR_BUY_FACTORY;
+  const averageVolume = sumVolume / avgVolPeriod;
+  return previousVolume < averageVolume * entryAvgVolFactor;
 };
 
 const getIsPrevLongTermKlineUpward = async () => {
@@ -47,13 +44,14 @@ const getIsPrevKlineDownward = async () => {
 };
 
 const getIsPrevVolumeAboveAverage = async () => {
+  const { avgVolPeriod, exitAvgVolFactor } = getDynamicConfig();
   const klineData = await getKlineData();
   const volumeArray = klineData.map((kline) => Number(kline[5]));
   const previousVolume = volumeArray[volumeArray.length - 2];
-  const recentVolumeArray = volumeArray.slice(-AVERAGE_VOLUME_PERIOD - 1, -1);
+  const recentVolumeArray = volumeArray.slice(-avgVolPeriod - 1, -1);
   const sumVolume = recentVolumeArray.reduce((acc, volume) => volume + acc, 0);
-  const averageVolume = sumVolume / AVERAGE_VOLUME_PERIOD;
-  return previousVolume > averageVolume * AVERAGE_VOLUME_FOR_SELL_FACTORY;
+  const averageVolume = sumVolume / avgVolPeriod;
+  return previousVolume > averageVolume * exitAvgVolFactor;
 };
 
 const getIsPrevLongTermKlineDownward = async () => {
