@@ -1,21 +1,14 @@
-import { getHAKlineData, getLTHAKlineData } from "./helpers.js";
+import { getCachedHAKlineData, getCachedLTHAKlineData } from "./cached-data.js";
 
-let cachedHAKlineData = [];
-let cachedLTHAKlineData = [];
-
-const setCachedKlineDatas = async () => {
-  const HAKlineData = await getHAKlineData();
-  const LTHAKlineData = await getLTHAKlineData();
-  cachedHAKlineData = HAKlineData;
-  cachedLTHAKlineData = LTHAKlineData;
-};
-
-const getPreHAKlineTrend = (index) => {
+const getPreHAKlineTrend = async (index) => {
+  const cachedHAKlineData = await getCachedHAKlineData();
   const { openPrice, closePrice } = cachedHAKlineData[index - 1];
   return closePrice > openPrice ? "UP" : "DOWN";
 };
 
-const getPreLTHAKlineTrend = (index) => {
+const getPreLTHAKlineTrend = async (index) => {
+  const cachedHAKlineData = await getCachedHAKlineData();
+  const cachedLTHAKlineData = await getCachedLTHAKlineData();
   const timestamp = cachedHAKlineData[index].openTime;
   const foundIndex = cachedLTHAKlineData.findIndex(
     (kline) => timestamp >= kline.openTime && timestamp <= kline.closeTime
@@ -24,17 +17,19 @@ const getPreLTHAKlineTrend = (index) => {
   return closePrice > openPrice ? "UP" : "DOWN";
 };
 
-const getPreVolume = (index) => {
+const getPreVolume = async (index) => {
+  const cachedHAKlineData = await getCachedHAKlineData();
   return cachedHAKlineData[index - 1].volume;
 };
 
-const getWeightedPrePeriodAvgVol = ({
+const getWeightedPrePeriodAvgVol = async ({
   index,
   avgVolPeriod,
   openAvgVolFactor,
   closeAvgVolFactor
 }) => {
-  const preHAKlineTrend = getPreHAKlineTrend(index);
+  const cachedHAKlineData = await getCachedHAKlineData();
+  const preHAKlineTrend = await getPreHAKlineTrend(index);
   const volumeArray = cachedHAKlineData.map((kline) => kline.volume);
   const prePeriodSumVolume = volumeArray
     .slice(index - avgVolPeriod, index)
@@ -56,18 +51,10 @@ export const getSignal = async ({
   openAvgVolFactor,
   closeAvgVolFactor
 }) => {
-  const noCachedKlineDatas =
-    cachedHAKlineData.length === 0 || cachedLTHAKlineData.length === 0;
-  const isCachedKlineDatasExpired =
-    cachedHAKlineData.length > 0 &&
-    Date.now() > cachedHAKlineData[cachedHAKlineData.length - 1].closeTime;
-  if (noCachedKlineDatas || isCachedKlineDatasExpired) {
-    await setCachedKlineDatas();
-  }
-  const preHAKlineTrend = getPreHAKlineTrend(index);
-  const preLTHAKlineTrend = getPreLTHAKlineTrend(index);
-  const preVolume = getPreVolume(index);
-  const weightedPrePeriodAvgVol = getWeightedPrePeriodAvgVol({
+  const preHAKlineTrend = await getPreHAKlineTrend(index);
+  const preLTHAKlineTrend = await getPreLTHAKlineTrend(index);
+  const preVolume = await getPreVolume(index);
+  const weightedPrePeriodAvgVol = await getWeightedPrePeriodAvgVol({
     index,
     avgVolPeriod,
     openAvgVolFactor,

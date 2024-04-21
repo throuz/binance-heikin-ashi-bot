@@ -1,12 +1,9 @@
 import schedule from "node-schedule";
 import { getBestResult } from "./src/backtest.js";
 import { nodeCache } from "./src/cache.js";
+import { getCachedKlineData } from "./src/cached-data.js";
 import { errorHandler, sendLineNotify } from "./src/common.js";
-import {
-  getAvailableBalance,
-  getHasPosition,
-  getKlineData
-} from "./src/helpers.js";
+import { getAvailableBalance, getHasPosition } from "./src/helpers.js";
 import { getSignal } from "./src/signal.js";
 import { closePosition, openPosition } from "./src/trade.js";
 
@@ -30,12 +27,12 @@ const logBalance = async () => {
 const executeStrategy = async () => {
   try {
     const hasPosition = await getHasPosition();
-    const klineData = await getKlineData();
+    const cachedKlineData = await getCachedKlineData();
     const { avgVolPeriod, openAvgVolFactor, closeAvgVolFactor } =
       nodeCache.mget(["avgVolPeriod", "openAvgVolFactor", "closeAvgVolFactor"]);
     const signal = await getSignal({
       hasPosition,
-      index: klineData.length - 1,
+      index: cachedKlineData.length - 1,
       avgVolPeriod,
       openAvgVolFactor,
       closeAvgVolFactor

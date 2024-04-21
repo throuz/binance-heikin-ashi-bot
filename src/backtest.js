@@ -8,7 +8,7 @@ import {
   OPEN_AVG_VOL_FACTOR_SETTING,
   ORDER_AMOUNT_PERCENT
 } from "../configs/trade-config.js";
-import { getKlineData } from "./helpers.js";
+import { getCachedKlineData } from "./cached-data.js";
 import { getSignal } from "./signal.js";
 
 const getReadableTime = (timestamp) => {
@@ -62,9 +62,9 @@ export const getBacktestResult = async ({
   let openPrice = null;
   let liquidationPrice = null;
   let valueOfEachPoint = null;
-  const klineData = await getKlineData();
-  for (let i = AVG_VOL_PERIOD_SETTING.max; i < klineData.length; i++) {
-    const curKline = klineData[i];
+  const cachedKlineData = await getCachedKlineData();
+  for (let i = AVG_VOL_PERIOD_SETTING.max; i < cachedKlineData.length; i++) {
+    const curKline = cachedKlineData[i];
     const hasPosition = !!positionFund;
     const signal = await getSignal({
       hasPosition,
@@ -88,7 +88,7 @@ export const getBacktestResult = async ({
       return null;
     }
     // Sell
-    if (signal === "CLOSE" || (hasPosition && i === klineData.length - 1)) {
+    if (signal === "CLOSE" || i === cachedKlineData.length - 1) {
       const closePrice = curKline.openPrice;
       const priceDifference = closePrice - openPrice;
       const pnl = valueOfEachPoint * priceDifference;
