@@ -1,6 +1,6 @@
-import { getDynamicConfig } from "../configs/dynamic-config.js";
-import { SYMBOL, ORDER_AMOUNT_PERCENT } from "../configs/trade-config.js";
+import { ORDER_AMOUNT_PERCENT, SYMBOL } from "../configs/trade-config.js";
 import { changeInitialLeverageAPI, newOrderAPI } from "./api.js";
+import { nodeCache } from "./cache.js";
 import { logWithTime, sendLineNotify } from "./common.js";
 import {
   formatBySize,
@@ -10,20 +10,20 @@ import {
 } from "./helpers.js";
 
 const changeToMaxLeverage = async () => {
-  const { leverage } = getDynamicConfig();
-  const totalParams = {
+  const leverage = nodeCache.get("leverage");
+  const params = {
     symbol: SYMBOL,
     leverage: leverage,
     recvWindow: 60000,
     timestamp: Date.now()
   };
-  await changeInitialLeverageAPI(totalParams);
+  await changeInitialLeverageAPI(params);
   await sendLineNotify(`Change To Max Leverage! ${SYMBOL} ${leverage}`);
 };
 
-const newOrder = async (totalParams) => {
-  await newOrderAPI(totalParams);
-  const { symbol, side, quantity } = totalParams;
+const newOrder = async (params) => {
+  await newOrderAPI(params);
+  const { symbol, side, quantity } = params;
   await sendLineNotify(`New order! ${symbol} ${side} ${quantity}`);
 };
 
@@ -54,7 +54,7 @@ const newOpenOrder = async (orderAmountPercent) => {
 
 export const openPosition = async () => {
   const positionInformation = await getPositionInformation();
-  const { leverage } = getDynamicConfig();
+  const leverage = nodeCache.get("leverage");
   if (Number(positionInformation.leverage) !== leverage) {
     await changeToMaxLeverage();
   }

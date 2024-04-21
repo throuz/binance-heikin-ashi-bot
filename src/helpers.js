@@ -1,18 +1,19 @@
-import { getDynamicConfig } from "../configs/dynamic-config.js";
+import { heikinashi } from "technicalindicators";
 import {
-  SYMBOL,
+  KLINE_INTERVAL,
+  KLINE_LIMIT,
+  LONG_TERM_KLINE_INTERVAL,
   QUOTE_ASSET,
-  KLINE_INTERVAL
+  SYMBOL
 } from "../configs/trade-config.js";
 import {
   exchangeInformationAPI,
   futuresAccountBalanceAPI,
-  markPriceAPI,
-  positionInformationAPI,
   klineDataAPI,
-  markPriceKlineDataAPI
+  symbolPriceTickerAPI,
+  positionInformationAPI
 } from "./api.js";
-import { heikinashi } from "technicalindicators";
+import { nodeCache } from "./cache.js";
 
 export const getStepSize = async () => {
   const exchangeInformation = await exchangeInformationAPI();
@@ -26,47 +27,52 @@ export const getStepSize = async () => {
 };
 
 export const getAvailableBalance = async () => {
-  const totalParams = { recvWindow: 60000, timestamp: Date.now() };
-  const futuresAccountBalance = await futuresAccountBalanceAPI(totalParams);
+  const params = { recvWindow: 60000, timestamp: Date.now() };
+  const futuresAccountBalance = await futuresAccountBalanceAPI(params);
   const availableBalance = futuresAccountBalance.find(
     ({ asset }) => asset === QUOTE_ASSET
   ).availableBalance;
   return availableBalance;
 };
 
-const getMarkPrice = async () => {
-  const totalParams = { symbol: SYMBOL };
-  const markPrice = await markPriceAPI(totalParams);
-  return markPrice.markPrice;
+const getLatestPrice = async () => {
+  const params = { symbol: SYMBOL };
+  const symbolPriceTicker = await symbolPriceTickerAPI(params);
+  return symbolPriceTicker.price;
 };
 
 const getAvailableQuantity = async () => {
-  const [availableBalance, markPrice] = await Promise.all([
+  const [availableBalance, latestPrice] = await Promise.all([
     getAvailableBalance(),
-    getMarkPrice()
+    getLatestPrice()
   ]);
-  const { leverage } = getDynamicConfig();
+  const leverage = nodeCache.get("leverage");
   const availableFunds = availableBalance * leverage;
-  return availableFunds / markPrice;
+  return availableFunds / latestPrice;
 };
 
 export const getPositionInformation = async () => {
-  const totalParams = {
+  const params = {
     symbol: SYMBOL,
     recvWindow: 60000,
     timestamp: Date.now()
   };
-  const positionInformation = await positionInformationAPI(totalParams);
+  const positionInformation = await positionInformationAPI(params);
   return positionInformation[0];
 };
 
+export const getHasPosition = async () => {
+  const positionInformation = await getPositionInformation();
+  return Math.abs(positionInformation.positionAmt) > 0;
+};
+
 const getAllowableQuantity = async () => {
-  const [positionInformation, markPrice] = await Promise.all([
+  const [positionInformation, latestPrice] = await Promise.all([
     getPositionInformation(),
-    getMarkPrice()
+    getLatestPrice()
   ]);
   const { maxNotionalValue, positionAmt } = positionInformation;
-  const maxAllowableQuantity = maxNotionalValue / markPrice;
+  const maxAllowableQuantity = maxNotionalValue / latestPrice;
   return maxAllowableQuantity - Math.abs(positionAmt);
 };
 
@@ -78,17 +84,6 @@ const getInvestableQuantity = async () => {
   return Math.min(availableQuantity, allowableQuantity);
 };
 
-const getAllPositionInformation = async () => {
-  const totalParams = { recvWindow: 60000, timestamp: Date.now() };
-  const positionInformation = await positionInformationAPI(totalParams);
-  return positionInformation;
-};
-
-export const getHasPositions = async () => {
-  const allPositionInformation = await getAllPositionInformation();
-  return allPositionInformation.some((info) => Math.abs(info.positionAmt) > 0);
-};
-
 export const getOrderQuantity = async (orderAmountPercent) => {
   const investableQuantity = await getInvestableQuantity();
   const orderQuantity = investableQuantity * (orderAmountPercent / 100);
@@ -96,29 +91,82 @@ export const getOrderQuantity = async (orderAmountPercent) => {
 };
 
 export const getKlineData = async () => {
-  const totalParams = { symbol: SYMBOL, interval: KLINE_INTERVAL };
-  const klineData = await klineDataAPI(totalParams);
-  return klineData;
+  const params = {
+    symbol: SYMBOL,
+    interval: KLINE_INTERVAL,
+    limit: KLINE_LIMIT
+  };
+  const klineData = await klineDataAPI(params);
+  const results = klineData.map((kline) => ({
+    openPrice: Number(kline[1]),
+    highPrice: Number(kline[2]),
+    lowPrice: Number(kline[3]),
+    closePrice: Number(kline[4]),
+    volume: Number(kline[5]),
+    openTime: kline[0],
+    closeTime: kline[6]
+  }));
+  return results;
 };
 
-export const getMarkPriceKlineData = async (interval = KLINE_INTERVAL) => {
-  const totalParams = { symbol: SYMBOL, interval };
-  const markPriceKlineData = await markPriceKlineDataAPI(totalParams);
-  return markPriceKlineData;
-};
-
-export const getHeikinAshiKlineData = async (interval = KLINE_INTERVAL) => {
-  const markPriceKlineData = await getMarkPriceKlineData(interval);
-  const openPrices = markPriceKlineData.map((kline) => Number(kline[1]));
-  const highPrices = markPriceKlineData.map((kline) => Number(kline[2]));
-  const lowPrices = markPriceKlineData.map((kline) => Number(kline[3]));
-  const closePrices = markPriceKlineData.map((kline) => Number(kline[4]));
-  return heikinashi({
+// HA -> Heikin Ashi
+export const getHAKlineData = async () => {
+  const params = {
+    symbol: SYMBOL,
+    interval: KLINE_INTERVAL,
+    limit: KLINE_LIMIT
+  };
+  const klineData = await klineDataAPI(params);
+  const openPrices = klineData.map((kline) => Number(kline[1]));
+  const highPrices = klineData.map((kline) => Number(kline[2]));
+  const lowPrices = klineData.map((kline) => Number(kline[3]));
+  const closePrices = klineData.map((kline) => Number(kline[4]));
+  const heikinashiResults = heikinashi({
     open: openPrices,
     high: highPrices,
     low: lowPrices,
     close: closePrices
   });
+  const results = klineData.map((kline, i) => ({
+    openPrice: heikinashiResults.open[i],
+    highPrice: heikinashiResults.high[i],
+    lowPrice: heikinashiResults.low[i],
+    closePrice: heikinashiResults.close[i],
+    volume: Number(kline[5]),
+    openTime: kline[0],
+    closeTime: kline[6]
+  }));
+  return results;
+};
+
+// LTHA -> Long Term Heikin Ashi
+export const getLTHAKlineData = async () => {
+  const params = {
+    symbol: SYMBOL,
+    interval: LONG_TERM_KLINE_INTERVAL,
+    limit: KLINE_LIMIT
+  };
+  const klineData = await klineDataAPI(params);
+  const openPrices = klineData.map((kline) => Number(kline[1]));
+  const highPrices = klineData.map((kline) => Number(kline[2]));
+  const lowPrices = klineData.map((kline) => Number(kline[3]));
+  const closePrices = klineData.map((kline) => Number(kline[4]));
+  const heikinashiResults = heikinashi({
+    open: openPrices,
+    high: highPrices,
+    low: lowPrices,
+    close: closePrices
+  });
+  const results = klineData.map((kline, i) => ({
+    openPrice: heikinashiResults.open[i],
+    highPrice: heikinashiResults.high[i],
+    lowPrice: heikinashiResults.low[i],
+    closePrice: heikinashiResults.close[i],
+    volume: Number(kline[5]),
+    openTime: kline[0],
+    closeTime: kline[6]
+  }));
+  return results;
 };
 
 const getPrecisionBySize = (size) => {

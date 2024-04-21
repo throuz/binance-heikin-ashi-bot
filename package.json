@@ -11,7 +11,8 @@
     "app:real": "TZ=Asia/Taipei NODE_ENV=real node app",
     "test:mock": "TZ=Asia/Taipei NODE_ENV=mock node test",
     "test:real": "TZ=Asia/Taipei NODE_ENV=real node test",
-    "backtest": "TZ=Asia/Taipei node backtest/app"
+    "backtest:mock": "TZ=Asia/Taipei NODE_ENV=mock node backtest",
+    "backtest:real": "TZ=Asia/Taipei NODE_ENV=real node backtest"
   },
   "type": "module"
 }
