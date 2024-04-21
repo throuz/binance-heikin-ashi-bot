@@ -17,6 +17,8 @@ const setSignalConfigs = async () => {
     { key: "closeAvgVolFactor", val: closeAvgVolFactor, ttl: 0 },
     { key: "leverage", val: leverage, ttl: 0 }
   ]);
+  console.log({ avgVolPeriod, openAvgVolFactor, closeAvgVolFactor, leverage });
+  console.log("==============================================================");
 };
 
 const logBalance = async () => {
