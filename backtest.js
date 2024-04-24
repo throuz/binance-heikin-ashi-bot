@@ -1,8 +1,14 @@
 import { getBacktestResult, getBestResult } from "./src/backtest.js";
 
 const bestResult = await getBestResult();
-const { fund, avgVolPeriod, openAvgVolFactor, closeAvgVolFactor, leverage } =
-  bestResult;
+const {
+  isStillHasPosition,
+  fund,
+  avgVolPeriod,
+  openAvgVolFactor,
+  closeAvgVolFactor,
+  leverage
+} = bestResult;
 console.log("================================================================");
 await getBacktestResult({
   shouldLogResults: true,
@@ -12,6 +18,7 @@ await getBacktestResult({
   leverage
 });
 console.log("================================================================");
+console.log("isStillHasPosition", isStillHasPosition);
 console.log("fund", fund);
 console.log("avgVolPeriod", avgVolPeriod);
 console.log("openAvgVolFactor", openAvgVolFactor);

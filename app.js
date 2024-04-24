@@ -9,15 +9,21 @@ import { closePosition, openPosition } from "./src/trade.js";
 
 const setSignalConfigs = async () => {
   const bestResult = await getBestResult();
-  const { avgVolPeriod, openAvgVolFactor, closeAvgVolFactor, leverage } =
-    bestResult;
+  const {
+    isStillHasPosition,
+    avgVolPeriod,
+    openAvgVolFactor,
+    closeAvgVolFactor,
+    leverage
+  } = bestResult;
   nodeCache.mset([
+    { key: "isStillHasPosition", val: isStillHasPosition, ttl: 0 },
     { key: "avgVolPeriod", val: avgVolPeriod, ttl: 0 },
     { key: "openAvgVolFactor", val: openAvgVolFactor, ttl: 0 },
     { key: "closeAvgVolFactor", val: closeAvgVolFactor, ttl: 0 },
     { key: "leverage", val: leverage, ttl: 0 }
   ]);
-  console.log({ avgVolPeriod, openAvgVolFactor, closeAvgVolFactor, leverage });
+  console.log(bestResult);
   console.log("==============================================================");
 };
 
@@ -30,23 +36,35 @@ const executeStrategy = async () => {
   try {
     const hasPosition = await getHasPosition();
     const cachedKlineData = await getCachedKlineData();
-    const { avgVolPeriod, openAvgVolFactor, closeAvgVolFactor } =
-      nodeCache.mget(["avgVolPeriod", "openAvgVolFactor", "closeAvgVolFactor"]);
-    const signal = await getSignal({
-      hasPosition,
-      index: cachedKlineData.length - 1,
+    const {
+      isStillHasPosition,
       avgVolPeriod,
       openAvgVolFactor,
       closeAvgVolFactor
-    });
-    if (signal === "OPEN") {
-      await openPosition();
+    } = nodeCache.mget([
+      "avgVolPeriod",
+      "openAvgVolFactor",
+      "closeAvgVolFactor"
+    ]);
+    if (isStillHasPosition) {
+      await setSignalConfigs();
+    } else {
+      const signal = await getSignal({
+        hasPosition,
+        index: cachedKlineData.length - 1,
+        avgVolPeriod,
+        openAvgVolFactor,
+        closeAvgVolFactor
+      });
+      if (signal === "OPEN") {
+        await openPosition();
+      }
+      if (signal === "CLOSE") {
+        await closePosition();
+        await logBalance();
+        await setSignalConfigs();
+      }
     }
-    if (signal === "CLOSE") {
-      await closePosition();
-      await logBalance();
-    }
-    await setSignalConfigs();
   } catch (error) {
     await errorHandler(error);
   }

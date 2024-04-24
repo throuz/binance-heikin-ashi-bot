@@ -88,7 +88,7 @@ export const getBacktestResult = async ({
       return null;
     }
     // Sell
-    if (signal === "CLOSE" || i === cachedKlineData.length - 1) {
+    if (signal === "CLOSE") {
       const closePrice = curKline.openPrice;
       const priceDifference = closePrice - openPrice;
       const pnl = valueOfEachPoint * priceDifference;
@@ -118,6 +118,7 @@ export const getBacktestResult = async ({
     }
   }
   return {
+    isStillHasPosition: !!positionFund,
     fund,
     avgVolPeriod,
     openAvgVolFactor,
