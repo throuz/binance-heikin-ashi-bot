@@ -3,7 +3,7 @@ import { getBestResult } from "./src/backtest.js";
 import { nodeCache } from "./src/cache.js";
 import { getCachedKlineData } from "./src/cached-data.js";
 import { errorHandler, sendLineNotify } from "./src/common.js";
-import { getAvailableBalance, getHasPosition } from "./src/helpers.js";
+import { getAvailableBalance, getPositionType } from "./src/helpers.js";
 import { getSignal } from "./src/signal.js";
 import { closePosition, openPosition } from "./src/trade.js";
 
@@ -34,8 +34,7 @@ const logBalance = async () => {
 
 const executeStrategy = async () => {
   try {
-    const hasPosition = await getHasPosition();
-    const cachedKlineData = await getCachedKlineData();
+    const positionType = await getPositionType();
     const {
       isStillHasPosition,
       avgVolPeriod,
@@ -49,19 +48,31 @@ const executeStrategy = async () => {
     if (isStillHasPosition) {
       await setSignalConfigs();
     } else {
+      const cachedKlineData = await getCachedKlineData();
       const signal = await getSignal({
-        hasPosition,
+        positionType,
         index: cachedKlineData.length - 1,
         avgVolPeriod,
         openAvgVolFactor,
         closeAvgVolFactor
       });
-      if (signal === "OPEN") {
-        await openPosition();
+      if (signal === "OPEN_LONG") {
+        await openPosition("BUY");
       }
-      if (signal === "CLOSE") {
-        await closePosition();
+      if (signal === "CLOSE_LONG") {
+        await closePosition("SELL");
         await logBalance();
+        await setSignalConfigs();
+      }
+      if (signal === "OPEN_SHORT") {
+        await openPosition("SELL");
+      }
+      if (signal === "CLOSE_SHORT") {
+        await closePosition("BUY");
+        await logBalance();
+        await setSignalConfigs();
+      }
+      if (positionType === "NONE" && signal === "NONE") {
         await setSignalConfigs();
       }
     }

@@ -22,30 +22,18 @@ const getPreVolume = async (index) => {
   return cachedHAKlineData[index - 1].volume;
 };
 
-const getWeightedPrePeriodAvgVol = async ({
-  index,
-  avgVolPeriod,
-  openAvgVolFactor,
-  closeAvgVolFactor
-}) => {
+const getPrePeriodAvgVol = async ({ index, avgVolPeriod }) => {
   const cachedHAKlineData = await getCachedHAKlineData();
-  const preHAKlineTrend = await getPreHAKlineTrend(index);
   const volumeArray = cachedHAKlineData.map((kline) => kline.volume);
   const prePeriodSumVolume = volumeArray
     .slice(index - avgVolPeriod, index)
     .reduce((acc, volume) => acc + volume, 0);
   const prePeriodAvgVol = prePeriodSumVolume / avgVolPeriod;
-  if (preHAKlineTrend === "UP") {
-    return prePeriodAvgVol * openAvgVolFactor;
-  }
-  if (preHAKlineTrend === "DOWN") {
-    return prePeriodAvgVol * closeAvgVolFactor;
-  }
   return prePeriodAvgVol;
 };
 
 export const getSignal = async ({
-  hasPosition,
+  positionType,
   index,
   avgVolPeriod,
   openAvgVolFactor,
@@ -54,27 +42,48 @@ export const getSignal = async ({
   const preHAKlineTrend = await getPreHAKlineTrend(index);
   const preLTHAKlineTrend = await getPreLTHAKlineTrend(index);
   const preVolume = await getPreVolume(index);
-  const weightedPrePeriodAvgVol = await getWeightedPrePeriodAvgVol({
+  const prePeriodAvgVol = await getPrePeriodAvgVol({
     index,
-    avgVolPeriod,
-    openAvgVolFactor,
-    closeAvgVolFactor
+    avgVolPeriod
   });
-  if (!hasPosition) {
+  const weightedOpenAvgVol = prePeriodAvgVol * openAvgVolFactor;
+  const weightedCloseAvgVol = prePeriodAvgVol * closeAvgVolFactor;
+  // OPEN_LONG
+  if (positionType === "NONE") {
     if (
       preHAKlineTrend === "UP" &&
-      preVolume < weightedPrePeriodAvgVol &&
+      preVolume < weightedOpenAvgVol &&
       preLTHAKlineTrend === "UP"
     ) {
-      return "OPEN";
+      return "OPEN_LONG";
     }
   }
-  if (hasPosition) {
+  // CLOSE_LONG
+  if (positionType === "LONG") {
     if (
-      (preHAKlineTrend === "DOWN" && preVolume > weightedPrePeriodAvgVol) ||
+      (preHAKlineTrend === "DOWN" && preVolume > weightedCloseAvgVol) ||
       preLTHAKlineTrend === "DOWN"
     ) {
-      return "CLOSE";
+      return "CLOSE_LONG";
+    }
+  }
+  // OPEN_SHORT
+  if (positionType === "NONE") {
+    if (
+      preHAKlineTrend === "DOWN" &&
+      preVolume < weightedOpenAvgVol &&
+      preLTHAKlineTrend === "DOWN"
+    ) {
+      return "OPEN_SHORT";
+    }
+  }
+  // CLOSE_SHORT
+  if (positionType === "SHORT") {
+    if (
+      (preHAKlineTrend === "UP" && preVolume > weightedCloseAvgVol) ||
+      preLTHAKlineTrend === "UP"
+    ) {
+      return "CLOSE_SHORT";
     }
   }
   return "NONE";

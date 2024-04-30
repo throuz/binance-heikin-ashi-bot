@@ -22,22 +22,37 @@ const getReadableTime = (timestamp) => {
   return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
 };
 
+const getLogColor = ({ positionType, openPrice, closePrice }) => {
+  const logRedColor = "\x1b[31m";
+  const logGreenColor = "\x1b[32m";
+  if (positionType === "LONG") {
+    return closePrice > openPrice ? logGreenColor : logRedColor;
+  }
+  if (positionType === "SHORT") {
+    return openPrice > closePrice ? logGreenColor : logRedColor;
+  }
+  return "";
+};
+
 const logTradeResult = ({
   fund,
+  positionType,
   openPrice,
   closePrice,
   openTimestamp,
   closeTimestamp
 }) => {
-  const logRedColor = "\x1b[31m";
-  const logGreenColor = "\x1b[32m";
   const logResetColor = "\x1b[0m";
-  const logColor = closePrice > openPrice ? logGreenColor : logRedColor;
+  const logColor = getLogColor({
+    positionType,
+    openPrice,
+    closePrice
+  });
   const formatedFund = fund.toFixed(2);
   const startTime = getReadableTime(openTimestamp);
   const endTime = getReadableTime(closeTimestamp);
   console.log(
-    `${logColor}Fund: ${formatedFund} [${openPrice} ~ ${closePrice}] [${startTime} ~ ${endTime}]${logResetColor}`
+    `${logColor}Fund: ${formatedFund} ${positionType} [${openPrice} ~ ${closePrice}] [${startTime} ~ ${endTime}]${logResetColor}`
   );
 };
 
@@ -57,43 +72,37 @@ export const getBacktestResult = async ({
   leverage
 }) => {
   let fund = INITIAL_FUNDING;
+  let positionType = "NONE";
   let positionFund = null;
   let openTimestamp = null;
   let openPrice = null;
   let liquidationPrice = null;
-  let valueOfEachPoint = null;
+  let quantity = null;
   const cachedKlineData = await getCachedKlineData();
   for (let i = AVG_VOL_PERIOD_SETTING.max; i < cachedKlineData.length; i++) {
     const curKline = cachedKlineData[i];
-    const hasPosition = !!positionFund;
     const signal = await getSignal({
-      hasPosition,
+      positionType,
       index: i,
       avgVolPeriod,
       openAvgVolFactor,
       closeAvgVolFactor
     });
-    // Buy
-    if (signal === "OPEN") {
-      positionFund = fund * ((ORDER_AMOUNT_PERCENT - 1) / 100); // Actual tests have found that typically 1% less
-      const fee = positionFund * leverage * FEE;
+    if (signal === "OPEN_LONG") {
+      positionFund = fund * ((ORDER_AMOUNT_PERCENT - 1) / 100) * leverage; // Actual tests have found that typically 1% less
+      const fee = positionFund * FEE;
       fund = fund - fee;
+      positionType = "LONG";
       openTimestamp = curKline.openTime;
       openPrice = curKline.openPrice;
-      liquidationPrice = openPrice * ((leverage - 1) / leverage + 0.01); // Actual tests have found that typically 1% more
-      valueOfEachPoint = (positionFund * leverage) / openPrice;
+      liquidationPrice = openPrice * (1 - 1 / leverage + 0.01); // Actual tests have found that typically 1% deviation
+      quantity = positionFund / openPrice;
     }
-    // Liquidation
-    if (hasPosition && curKline.lowPrice < liquidationPrice) {
-      return null;
-    }
-    // Sell
-    if (signal === "CLOSE") {
+    if (signal === "CLOSE_LONG") {
       const closePrice = curKline.openPrice;
-      const priceDifference = closePrice - openPrice;
-      const pnl = valueOfEachPoint * priceDifference;
+      const pnl = (closePrice - openPrice) * quantity;
       positionFund += pnl;
-      const fee = positionFund * leverage * FEE;
+      const fee = positionFund * FEE;
       const closeTimestamp = curKline.openTime;
       const fundingFee = getFundingFee({
         positionFund,
@@ -104,17 +113,65 @@ export const getBacktestResult = async ({
       if (shouldLogResults) {
         logTradeResult({
           fund,
+          positionType,
           openPrice,
           closePrice,
           openTimestamp,
           closeTimestamp
         });
       }
+      positionType = "NONE";
       positionFund = null;
       openTimestamp = null;
       openPrice = null;
       liquidationPrice = null;
-      valueOfEachPoint = null;
+      quantity = null;
+    }
+    if (signal === "OPEN_SHORT") {
+      positionFund = fund * ((ORDER_AMOUNT_PERCENT - 1) / 100) * leverage; // Actual tests have found that typically 1% less
+      const fee = positionFund * FEE;
+      fund = fund - fee;
+      positionType = "SHORT";
+      openTimestamp = curKline.openTime;
+      openPrice = curKline.openPrice;
+      liquidationPrice = openPrice * (1 + 1 / leverage - 0.01); // Actual tests have found that typically 1% deviation
+      quantity = positionFund / openPrice;
+    }
+    if (signal === "CLOSE_SHORT") {
+      const closePrice = curKline.openPrice;
+      const pnl = (openPrice - closePrice) * quantity;
+      positionFund += pnl;
+      const fee = positionFund * FEE;
+      const closeTimestamp = curKline.openTime;
+      const fundingFee = getFundingFee({
+        positionFund,
+        openTimestamp,
+        closeTimestamp
+      });
+      fund = fund + pnl - fee + fundingFee;
+      if (shouldLogResults) {
+        logTradeResult({
+          fund,
+          positionType,
+          openPrice,
+          closePrice,
+          openTimestamp,
+          closeTimestamp
+        });
+      }
+      positionType = "NONE";
+      positionFund = null;
+      openTimestamp = null;
+      openPrice = null;
+      liquidationPrice = null;
+      quantity = null;
+    }
+    // Liquidation
+    if (
+      (positionType === "LONG" && curKline.lowPrice < liquidationPrice) ||
+      (positionType === "SHORT" && curKline.highPrice > liquidationPrice)
+    ) {
+      return null;
     }
   }
   return {

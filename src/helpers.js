@@ -61,9 +61,16 @@ export const getPositionInformation = async () => {
   return positionInformation[0];
 };
 
-export const getHasPosition = async () => {
+export const getPositionType = async () => {
   const positionInformation = await getPositionInformation();
-  return Math.abs(positionInformation.positionAmt) > 0;
+  const positionAmt = Number(positionInformation.positionAmt);
+  if (positionAmt > 0) {
+    return "LONG";
+  }
+  if (positionAmt < 0) {
+    return "SHORT";
+  }
+  return "NONE";
 };
 
 const getAllowableQuantity = async () => {

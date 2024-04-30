@@ -27,7 +27,7 @@ const newOrder = async (params) => {
   await sendLineNotify(`New order! ${symbol} ${side} ${quantity}`);
 };
 
-const newOpenOrder = async (orderAmountPercent) => {
+const newOpenOrder = async ({ orderAmountPercent, side }) => {
   try {
     const [orderQuantity, stepSize] = await Promise.all([
       getOrderQuantity(orderAmountPercent),
@@ -35,7 +35,7 @@ const newOpenOrder = async (orderAmountPercent) => {
     ]);
     await newOrder({
       symbol: SYMBOL,
-      side: "BUY",
+      side,
       type: "MARKET",
       quantity: formatBySize(orderQuantity, stepSize),
       recvWindow: 60000,
@@ -45,31 +45,30 @@ const newOpenOrder = async (orderAmountPercent) => {
     if (error.response && error.response.data.code === -2019) {
       console.log("orderAmountPercent:", orderAmountPercent);
       logWithTime(error.response.data.msg);
-      await newOpenOrder(orderAmountPercent - 1);
+      await newOpenOrder({ orderAmountPercent: orderAmountPercent - 1, side });
     } else {
       throw error;
     }
   }
 };
 
-export const openPosition = async () => {
+export const openPosition = async (side) => {
   const positionInformation = await getPositionInformation();
   const leverage = nodeCache.get("leverage");
   if (Number(positionInformation.leverage) !== leverage) {
     await changeToMaxLeverage();
   }
-  await newOpenOrder(ORDER_AMOUNT_PERCENT);
+  await newOpenOrder({ orderAmountPercent: ORDER_AMOUNT_PERCENT, side });
   await sendLineNotify("Open position!");
 };
 
-export const closePosition = async () => {
+export const closePosition = async (side) => {
   const positionInformation = await getPositionInformation();
-  const { positionAmt } = positionInformation;
-  const amount = Math.abs(positionAmt);
+  const amount = Math.abs(positionInformation.positionAmt);
   if (amount > 0) {
     await newOrder({
       symbol: SYMBOL,
-      side: "SELL",
+      side,
       type: "MARKET",
       quantity: amount,
       recvWindow: 60000,
