@@ -1,15 +1,15 @@
-import { getCachedHAKlineData, getCachedLTHAKlineData } from "./cached-data.js";
+import { getCachedKlineData, getCachedLTHAKlineData } from "./cached-data.js";
 
 const getPreHAKlineTrend = async (index) => {
-  const cachedHAKlineData = await getCachedHAKlineData();
-  const { openPrice, closePrice } = cachedHAKlineData[index - 1];
+  const cachedKlineData = await getCachedKlineData();
+  const { openPrice, closePrice } = cachedKlineData[index - 1];
   return closePrice > openPrice ? "UP" : "DOWN";
 };
 
 const getPreLTHAKlineTrend = async (index) => {
-  const cachedHAKlineData = await getCachedHAKlineData();
+  const cachedKlineData = await getCachedKlineData();
   const cachedLTHAKlineData = await getCachedLTHAKlineData();
-  const timestamp = cachedHAKlineData[index].openTime;
+  const timestamp = cachedKlineData[index].openTime;
   const foundIndex = cachedLTHAKlineData.findIndex(
     (kline) => timestamp >= kline.openTime && timestamp <= kline.closeTime
   );
@@ -18,13 +18,13 @@ const getPreLTHAKlineTrend = async (index) => {
 };
 
 const getPreVolume = async (index) => {
-  const cachedHAKlineData = await getCachedHAKlineData();
-  return cachedHAKlineData[index - 1].volume;
+  const cachedKlineData = await getCachedKlineData();
+  return cachedKlineData[index - 1].volume;
 };
 
 const getPrePeriodAvgVol = async ({ index, avgVolPeriod }) => {
-  const cachedHAKlineData = await getCachedHAKlineData();
-  const volumeArray = cachedHAKlineData.map((kline) => kline.volume);
+  const cachedKlineData = await getCachedKlineData();
+  const volumeArray = cachedKlineData.map((kline) => kline.volume);
   const prePeriodSumVolume = volumeArray
     .slice(index - avgVolPeriod, index)
     .reduce((acc, volume) => acc + volume, 0);
