@@ -1,13 +1,13 @@
-import { getCachedKlineData, getCachedLTHAKlineData } from "./cached-data.js";
+import { getCachedHAKlineData, getCachedLTHAKlineData } from "./cached-data.js";
 
 const getPreHAKlineTrend = async (index) => {
-  const cachedKlineData = await getCachedKlineData();
+  const cachedKlineData = await getCachedHAKlineData();
   const { openPrice, closePrice } = cachedKlineData[index - 1];
   return closePrice > openPrice ? "UP" : "DOWN";
 };
 
 const getPreLTHAKlineTrend = async (index) => {
-  const cachedKlineData = await getCachedKlineData();
+  const cachedKlineData = await getCachedHAKlineData();
   const cachedLTHAKlineData = await getCachedLTHAKlineData();
   const timestamp = cachedKlineData[index].openTime;
   const foundIndex = cachedLTHAKlineData.findIndex(
@@ -18,12 +18,12 @@ const getPreLTHAKlineTrend = async (index) => {
 };
 
 const getPreVolume = async (index) => {
-  const cachedKlineData = await getCachedKlineData();
+  const cachedKlineData = await getCachedHAKlineData();
   return cachedKlineData[index - 1].volume;
 };
 
 const getPrePeriodAvgVol = async ({ index, avgVolPeriod }) => {
-  const cachedKlineData = await getCachedKlineData();
+  const cachedKlineData = await getCachedHAKlineData();
   const volumeArray = cachedKlineData.map((kline) => kline.volume);
   const prePeriodSumVolume = volumeArray
     .slice(index - avgVolPeriod, index)
@@ -60,10 +60,7 @@ export const getSignal = async ({
   }
   // CLOSE_LONG
   if (positionType === "LONG") {
-    if (
-      (preHAKlineTrend === "DOWN" && preVolume > weightedCloseAvgVol) ||
-      preLTHAKlineTrend === "DOWN"
-    ) {
+    if (preVolume > weightedCloseAvgVol || preLTHAKlineTrend === "DOWN") {
       return "CLOSE_LONG";
     }
   }
@@ -79,10 +76,7 @@ export const getSignal = async ({
   }
   // CLOSE_SHORT
   if (positionType === "SHORT") {
-    if (
-      (preHAKlineTrend === "UP" && preVolume > weightedCloseAvgVol) ||
-      preLTHAKlineTrend === "UP"
-    ) {
+    if (preVolume > weightedCloseAvgVol || preLTHAKlineTrend === "UP") {
       return "CLOSE_SHORT";
     }
   }
