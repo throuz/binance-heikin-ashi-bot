@@ -64,6 +64,16 @@ const getFundingFee = ({ positionFund, openTimestamp, closeTimestamp }) => {
   return fundingFee;
 };
 
+const getIsUnRealizedProfit = ({ positionType, openPrice, curPrice }) => {
+  if (positionType === "LONG") {
+    return openPrice < curPrice;
+  }
+  if (positionType === "SHORT") {
+    return openPrice > curPrice;
+  }
+  return false;
+};
+
 export const getBacktestResult = async ({
   shouldLogResults,
   avgVolPeriod,
@@ -81,12 +91,18 @@ export const getBacktestResult = async ({
   const cachedKlineData = await getCachedKlineData();
   for (let i = AVG_VOL_PERIOD_SETTING.max; i < cachedKlineData.length; i++) {
     const curKline = cachedKlineData[i];
+    const isUnRealizedProfit = getIsUnRealizedProfit({
+      positionType,
+      openPrice,
+      curPrice: curKline.openPrice
+    });
     const signal = await getSignal({
       positionType,
       index: i,
       avgVolPeriod,
       openAvgVolFactor,
-      closeAvgVolFactor
+      closeAvgVolFactor,
+      isUnRealizedProfit
     });
     if (signal === "OPEN_LONG") {
       positionFund = fund * ((ORDER_AMOUNT_PERCENT - 1) / 100) * leverage; // Actual tests have found that typically 1% less

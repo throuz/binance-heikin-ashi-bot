@@ -3,7 +3,11 @@ import { getBestResult } from "./src/backtest.js";
 import { nodeCache } from "./src/cache.js";
 import { getCachedKlineData } from "./src/cached-data.js";
 import { errorHandler, sendLineNotify } from "./src/common.js";
-import { getAvailableBalance, getPositionType } from "./src/helpers.js";
+import {
+  getAvailableBalance,
+  getPositionType,
+  getIsUnRealizedProfit
+} from "./src/helpers.js";
 import { getSignal } from "./src/signal.js";
 import { closePosition, openPosition } from "./src/trade.js";
 
@@ -49,12 +53,14 @@ const executeStrategy = async () => {
       await setSignalConfigs();
     } else {
       const cachedKlineData = await getCachedKlineData();
+      const isUnRealizedProfit = await getIsUnRealizedProfit();
       const signal = await getSignal({
         positionType,
         index: cachedKlineData.length - 1,
         avgVolPeriod,
         openAvgVolFactor,
-        closeAvgVolFactor
+        closeAvgVolFactor,
+        isUnRealizedProfit
       });
       if (signal === "OPEN_LONG") {
         await openPosition("BUY");

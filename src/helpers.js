@@ -73,6 +73,12 @@ export const getPositionType = async () => {
   return "NONE";
 };
 
+export const getIsUnRealizedProfit = async () => {
+  const positionInformation = await getPositionInformation();
+  const unRealizedProfit = Number(positionInformation.unRealizedProfit);
+  return unRealizedProfit > 0;
+};
+
 const getAllowableQuantity = async () => {
   const [positionInformation, latestPrice] = await Promise.all([
     getPositionInformation(),

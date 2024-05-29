@@ -37,7 +37,8 @@ export const getSignal = async ({
   index,
   avgVolPeriod,
   openAvgVolFactor,
-  closeAvgVolFactor
+  closeAvgVolFactor,
+  isUnRealizedProfit
 }) => {
   const preHAKlineTrend = await getPreHAKlineTrend(index);
   const preLTHAKlineTrend = await getPreLTHAKlineTrend(index);
@@ -60,7 +61,10 @@ export const getSignal = async ({
   }
   // CLOSE_LONG
   if (positionType === "LONG") {
-    if (preVolume > weightedCloseAvgVol || preLTHAKlineTrend === "DOWN") {
+    if (
+      (preVolume > weightedCloseAvgVol && isUnRealizedProfit) ||
+      preLTHAKlineTrend === "DOWN"
+    ) {
       return "CLOSE_LONG";
     }
   }
@@ -76,7 +80,10 @@ export const getSignal = async ({
   }
   // CLOSE_SHORT
   if (positionType === "SHORT") {
-    if (preVolume > weightedCloseAvgVol || preLTHAKlineTrend === "UP") {
+    if (
+      (preVolume > weightedCloseAvgVol && isUnRealizedProfit) ||
+      preLTHAKlineTrend === "UP"
+    ) {
       return "CLOSE_SHORT";
     }
   }
