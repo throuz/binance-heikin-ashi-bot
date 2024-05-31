@@ -45,6 +45,7 @@ const executeStrategy = async () => {
       openAvgVolFactor,
       closeAvgVolFactor
     } = nodeCache.mget([
+      "isStillHasPosition",
       "avgVolPeriod",
       "openAvgVolFactor",
       "closeAvgVolFactor"
