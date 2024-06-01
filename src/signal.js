@@ -1,44 +1,7 @@
-import { getCachedHAKlineData, getCachedLTHAKlineData } from "./cached-data.js";
-
-const getCurHAOpenPrice = async (index) => {
-  const cachedKlineData = await getCachedHAKlineData();
-  return cachedKlineData[index].openPrice;
-};
-
-const getCurLTHAOpenPrice = async (index) => {
-  const cachedKlineData = await getCachedHAKlineData();
-  const cachedLTHAKlineData = await getCachedLTHAKlineData();
-  const timestamp = cachedKlineData[index].openTime;
-  const foundIndex = cachedLTHAKlineData.findIndex(
-    (kline) => timestamp >= kline.openTime && timestamp <= kline.closeTime
-  );
-  return cachedLTHAKlineData[foundIndex].openPrice;
-};
-
-const getPreHAKlineTrend = async (index) => {
-  const cachedKlineData = await getCachedHAKlineData();
-  const { openPrice, closePrice } = cachedKlineData[index - 1];
-  return closePrice > openPrice ? "UP" : "DOWN";
-};
-
-const getPreLTHAKlineTrend = async (index) => {
-  const cachedKlineData = await getCachedHAKlineData();
-  const cachedLTHAKlineData = await getCachedLTHAKlineData();
-  const timestamp = cachedKlineData[index].openTime;
-  const foundIndex = cachedLTHAKlineData.findIndex(
-    (kline) => timestamp >= kline.openTime && timestamp <= kline.closeTime
-  );
-  const { openPrice, closePrice } = cachedLTHAKlineData[foundIndex - 1];
-  return closePrice > openPrice ? "UP" : "DOWN";
-};
-
-const getPreVolume = async (index) => {
-  const cachedKlineData = await getCachedHAKlineData();
-  return cachedKlineData[index - 1].volume;
-};
+import { getCachedKlineData, getCachedUsefulData } from "./cached-data.js";
 
 const getPrePeriodAvgVol = async ({ index, avgVolPeriod }) => {
-  const cachedKlineData = await getCachedHAKlineData();
+  const cachedKlineData = await getCachedKlineData();
   const volumeArray = cachedKlineData.map((kline) => kline.volume);
   const prePeriodSumVolume = volumeArray
     .slice(index - avgVolPeriod, index)
@@ -55,15 +18,15 @@ export const getSignal = async ({
   closeAvgVolFactor,
   isUnRealizedProfit
 }) => {
-  const curHAOpenPrice = await getCurHAOpenPrice(index);
-  const curLTHAOpenPrice = await getCurLTHAOpenPrice(index);
-  const preHAKlineTrend = await getPreHAKlineTrend(index);
-  const preLTHAKlineTrend = await getPreLTHAKlineTrend(index);
-  const preVolume = await getPreVolume(index);
-  const prePeriodAvgVol = await getPrePeriodAvgVol({
-    index,
-    avgVolPeriod
-  });
+  const cachedUsefulData = await getCachedUsefulData();
+  const {
+    curHAOpenPrice,
+    curLTHAOpenPrice,
+    preHAKlineTrend,
+    preLTHAKlineTrend,
+    preVolume
+  } = cachedUsefulData[index];
+  const prePeriodAvgVol = await getPrePeriodAvgVol({ index, avgVolPeriod });
   const weightedOpenAvgVol = prePeriodAvgVol * openAvgVolFactor;
   const weightedCloseAvgVol = prePeriodAvgVol * closeAvgVolFactor;
   // OPEN_LONG
