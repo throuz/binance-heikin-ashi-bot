@@ -38,48 +38,39 @@ const logBalance = async () => {
 
 const executeStrategy = async () => {
   try {
-    const positionType = await getPositionType();
-    const {
-      isStillHasPosition,
+    const { avgVolPeriod, openAvgVolFactor, closeAvgVolFactor } =
+      nodeCache.mget(["avgVolPeriod", "openAvgVolFactor", "closeAvgVolFactor"]);
+    const [positionType, cachedKlineData, isUnRealizedProfit] =
+      await Promise.all([
+        getPositionType(),
+        getCachedKlineData(),
+        getIsUnRealizedProfit()
+      ]);
+    const signal = await getSignal({
+      positionType,
+      index: cachedKlineData.length - 1,
       avgVolPeriod,
       openAvgVolFactor,
-      closeAvgVolFactor
-    } = nodeCache.mget([
-      "isStillHasPosition",
-      "avgVolPeriod",
-      "openAvgVolFactor",
-      "closeAvgVolFactor"
-    ]);
-    if (isStillHasPosition) {
-      await setSignalConfigs();
-    } else {
-      const cachedKlineData = await getCachedKlineData();
-      const isUnRealizedProfit = await getIsUnRealizedProfit();
-      const signal = await getSignal({
-        positionType,
-        index: cachedKlineData.length - 1,
-        avgVolPeriod,
-        openAvgVolFactor,
-        closeAvgVolFactor,
-        isUnRealizedProfit
-      });
-      if (signal === "OPEN_LONG") {
-        await openPosition("BUY");
-      }
-      if (signal === "CLOSE_LONG") {
-        await closePosition("SELL");
-        await logBalance();
+      closeAvgVolFactor,
+      isUnRealizedProfit
+    });
+    if (signal === "OPEN_LONG") {
+      await openPosition("BUY");
+    }
+    if (signal === "CLOSE_LONG") {
+      await closePosition("SELL");
+      await logBalance();
+      if (isUnRealizedProfit === false) {
         await setSignalConfigs();
       }
-      if (signal === "OPEN_SHORT") {
-        await openPosition("SELL");
-      }
-      if (signal === "CLOSE_SHORT") {
-        await closePosition("BUY");
-        await logBalance();
-        await setSignalConfigs();
-      }
-      if (positionType === "NONE" && signal === "NONE") {
+    }
+    if (signal === "OPEN_SHORT") {
+      await openPosition("SELL");
+    }
+    if (signal === "CLOSE_SHORT") {
+      await closePosition("BUY");
+      await logBalance();
+      if (isUnRealizedProfit === false) {
         await setSignalConfigs();
       }
     }
