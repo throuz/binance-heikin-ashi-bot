@@ -1,5 +1,20 @@
 import { getCachedHAKlineData, getCachedLTHAKlineData } from "./cached-data.js";
 
+const getCurHAOpenPrice = async (index) => {
+  const cachedKlineData = await getCachedHAKlineData();
+  return cachedKlineData[index].openPrice;
+};
+
+const getCurLTHAOpenPrice = async (index) => {
+  const cachedKlineData = await getCachedHAKlineData();
+  const cachedLTHAKlineData = await getCachedLTHAKlineData();
+  const timestamp = cachedKlineData[index].openTime;
+  const foundIndex = cachedLTHAKlineData.findIndex(
+    (kline) => timestamp >= kline.openTime && timestamp <= kline.closeTime
+  );
+  return cachedLTHAKlineData[foundIndex].openPrice;
+};
+
 const getPreHAKlineTrend = async (index) => {
   const cachedKlineData = await getCachedHAKlineData();
   const { openPrice, closePrice } = cachedKlineData[index - 1];
@@ -40,6 +55,8 @@ export const getSignal = async ({
   closeAvgVolFactor,
   isUnRealizedProfit
 }) => {
+  const curHAOpenPrice = await getCurHAOpenPrice(index);
+  const curLTHAOpenPrice = await getCurLTHAOpenPrice(index);
   const preHAKlineTrend = await getPreHAKlineTrend(index);
   const preLTHAKlineTrend = await getPreLTHAKlineTrend(index);
   const preVolume = await getPreVolume(index);
@@ -54,6 +71,7 @@ export const getSignal = async ({
     if (
       preHAKlineTrend === "UP" &&
       preVolume < weightedOpenAvgVol &&
+      curHAOpenPrice < curLTHAOpenPrice &&
       preLTHAKlineTrend === "UP"
     ) {
       return "OPEN_LONG";
@@ -73,6 +91,7 @@ export const getSignal = async ({
     if (
       preHAKlineTrend === "DOWN" &&
       preVolume < weightedOpenAvgVol &&
+      curHAOpenPrice > curLTHAOpenPrice &&
       preLTHAKlineTrend === "DOWN"
     ) {
       return "OPEN_SHORT";
