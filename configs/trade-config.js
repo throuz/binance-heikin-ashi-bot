@@ -12,3 +12,4 @@ export const FUNDING_RATE = 0.0001; // 0.01%
 export const AVG_VOL_PERIOD_SETTING = { min: 5, max: 30, step: 1 };
 export const OPEN_AVG_VOL_FACTOR_SETTING = { min: 0.5, max: 1, step: 0.05 };
 export const CLOSE_AVG_VOL_FACTOR_SETTING = { min: 1, max: 1.5, step: 0.05 };
+export const KLINE_START_TIME = null; // timestamp

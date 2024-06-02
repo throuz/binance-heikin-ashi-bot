@@ -4,7 +4,8 @@ import {
   KLINE_LIMIT,
   LONG_TERM_KLINE_INTERVAL,
   QUOTE_ASSET,
-  SYMBOL
+  SYMBOL,
+  KLINE_START_TIME
 } from "../configs/trade-config.js";
 import {
   exchangeInformationAPI,
@@ -107,7 +108,8 @@ export const getKlineData = async () => {
   const params = {
     symbol: SYMBOL,
     interval: KLINE_INTERVAL,
-    limit: KLINE_LIMIT
+    limit: KLINE_LIMIT,
+    startTime: process.env.NODE_SCRIPT === "backtest" ? KLINE_START_TIME : null
   };
   const klineData = await klineDataAPI(params);
   const results = klineData.map((kline) => ({
@@ -127,7 +129,8 @@ export const getHAKlineData = async () => {
   const params = {
     symbol: SYMBOL,
     interval: KLINE_INTERVAL,
-    limit: KLINE_LIMIT
+    limit: KLINE_LIMIT,
+    startTime: process.env.NODE_SCRIPT === "backtest" ? KLINE_START_TIME : null
   };
   const klineData = await klineDataAPI(params);
   const openPrices = klineData.map((kline) => Number(kline[1]));
