@@ -2,10 +2,10 @@ import { getCachedKlineData, getCachedUsefulData } from "./cached-data.js";
 
 const getPrePeriodAvgVol = async ({ index, avgVolPeriod }) => {
   const cachedKlineData = await getCachedKlineData();
-  const volumeArray = cachedKlineData.map((kline) => kline.volume);
-  const prePeriodSumVolume = volumeArray
-    .slice(index - avgVolPeriod, index)
-    .reduce((acc, volume) => acc + volume, 0);
+  let prePeriodSumVolume = 0;
+  for (let i = index - avgVolPeriod; i < index; i++) {
+    prePeriodSumVolume += cachedKlineData[i].volume;
+  }
   const prePeriodAvgVol = prePeriodSumVolume / avgVolPeriod;
   return prePeriodAvgVol;
 };
