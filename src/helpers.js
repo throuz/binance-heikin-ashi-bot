@@ -5,7 +5,8 @@ import {
   LONG_TERM_KLINE_INTERVAL,
   QUOTE_ASSET,
   SYMBOL,
-  KLINE_START_TIME
+  KLINE_START_TIME,
+  IS_KLINE_START_TIME_TO_NOW
 } from "../configs/trade-config.js";
 import {
   exchangeInformationAPI,
@@ -104,14 +105,29 @@ export const getOrderQuantity = async (orderAmountPercent) => {
   return orderQuantity;
 };
 
+export const getOriginalKlineData = async () => {
+  const now = Date.now();
+  let originalKlineData = [];
+  let startTime = KLINE_START_TIME;
+  do {
+    const params = {
+      symbol: SYMBOL,
+      interval: KLINE_INTERVAL,
+      limit: KLINE_LIMIT,
+      startTime
+    };
+    const klineData = await klineDataAPI(params);
+    originalKlineData = originalKlineData.concat(klineData);
+    if (klineData.length > 0) {
+      startTime = klineData[klineData.length - 1][6] + 1;
+    }
+    if (!IS_KLINE_START_TIME_TO_NOW) break;
+  } while (startTime && startTime < now);
+  return originalKlineData;
+};
+
 export const getKlineData = async () => {
-  const params = {
-    symbol: SYMBOL,
-    interval: KLINE_INTERVAL,
-    limit: KLINE_LIMIT,
-    startTime: process.env.NODE_SCRIPT === "backtest" ? KLINE_START_TIME : null
-  };
-  const klineData = await klineDataAPI(params);
+  const klineData = await getOriginalKlineData();
   const results = klineData.map((kline) => ({
     openPrice: Number(kline[1]),
     highPrice: Number(kline[2]),
@@ -126,13 +142,7 @@ export const getKlineData = async () => {
 
 // HA -> Heikin Ashi
 export const getHAKlineData = async () => {
-  const params = {
-    symbol: SYMBOL,
-    interval: KLINE_INTERVAL,
-    limit: KLINE_LIMIT,
-    startTime: process.env.NODE_SCRIPT === "backtest" ? KLINE_START_TIME : null
-  };
-  const klineData = await klineDataAPI(params);
+  const klineData = await getOriginalKlineData();
   const openPrices = klineData.map((kline) => Number(kline[1]));
   const highPrices = klineData.map((kline) => Number(kline[2]));
   const lowPrices = klineData.map((kline) => Number(kline[3]));
