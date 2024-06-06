@@ -6,6 +6,7 @@ import {
   FUNDING_RATE,
   INITIAL_FUNDING,
   OPEN_AVG_VOL_FACTOR_SETTING,
+  LEVERAGE_SETTING,
   ORDER_AMOUNT_PERCENT
 } from "../configs/trade-config.js";
 import { getCachedKlineData } from "./cached-data.js";
@@ -200,87 +201,84 @@ export const getBacktestResult = async ({
   };
 };
 
-const getTotalRuns = () => {
-  const avgVolPeriodRuns =
-    (AVG_VOL_PERIOD_SETTING.max - AVG_VOL_PERIOD_SETTING.min) /
-      AVG_VOL_PERIOD_SETTING.step +
-    1;
-  const openAvgVolFactorRuns =
-    (OPEN_AVG_VOL_FACTOR_SETTING.max - OPEN_AVG_VOL_FACTOR_SETTING.min) /
-      OPEN_AVG_VOL_FACTOR_SETTING.step +
-    1;
-  const closeAvgVolFactorRuns =
-    (CLOSE_AVG_VOL_FACTOR_SETTING.max - CLOSE_AVG_VOL_FACTOR_SETTING.min) /
-      CLOSE_AVG_VOL_FACTOR_SETTING.step +
-    1;
-  return avgVolPeriodRuns * openAvgVolFactorRuns * closeAvgVolFactorRuns;
-};
-
 const getAddedNumber = ({ number, addNumber, digit }) => {
   return Number((number + addNumber).toFixed(digit));
 };
 
-export const getBestResult = async () => {
-  const progressBar = new SingleBar({}, Presets.shades_classic);
-  progressBar.start(getTotalRuns(), 0);
-
-  let bestResult = { fund: 0 };
-
+const getSettingsArray = () => {
+  const settingsArray = [];
   for (
-    let avgVolPeriod = AVG_VOL_PERIOD_SETTING.min;
-    avgVolPeriod <= AVG_VOL_PERIOD_SETTING.max;
-    avgVolPeriod = getAddedNumber({
-      number: avgVolPeriod,
-      addNumber: AVG_VOL_PERIOD_SETTING.step,
+    let leverage = LEVERAGE_SETTING.min;
+    leverage <= LEVERAGE_SETTING.max;
+    leverage = getAddedNumber({
+      number: leverage,
+      addNumber: LEVERAGE_SETTING.step,
       digit: 0
     })
   ) {
     for (
-      let openAvgVolFactor = OPEN_AVG_VOL_FACTOR_SETTING.min;
-      openAvgVolFactor <= OPEN_AVG_VOL_FACTOR_SETTING.max;
-      openAvgVolFactor = getAddedNumber({
-        number: openAvgVolFactor,
-        addNumber: OPEN_AVG_VOL_FACTOR_SETTING.step,
-        digit: 2
+      let avgVolPeriod = AVG_VOL_PERIOD_SETTING.min;
+      avgVolPeriod <= AVG_VOL_PERIOD_SETTING.max;
+      avgVolPeriod = getAddedNumber({
+        number: avgVolPeriod,
+        addNumber: AVG_VOL_PERIOD_SETTING.step,
+        digit: 0
       })
     ) {
       for (
-        let closeAvgVolFactor = CLOSE_AVG_VOL_FACTOR_SETTING.min;
-        closeAvgVolFactor <= CLOSE_AVG_VOL_FACTOR_SETTING.max;
-        closeAvgVolFactor = getAddedNumber({
-          number: closeAvgVolFactor,
-          addNumber: CLOSE_AVG_VOL_FACTOR_SETTING.step,
+        let openAvgVolFactor = OPEN_AVG_VOL_FACTOR_SETTING.min;
+        openAvgVolFactor <= OPEN_AVG_VOL_FACTOR_SETTING.max;
+        openAvgVolFactor = getAddedNumber({
+          number: openAvgVolFactor,
+          addNumber: OPEN_AVG_VOL_FACTOR_SETTING.step,
           digit: 2
         })
       ) {
-        const backtestResult = await getBacktestResult({
-          shouldLogResults: false,
-          avgVolPeriod,
-          openAvgVolFactor,
-          closeAvgVolFactor,
-          leverage: 1
-        });
-        if (backtestResult && backtestResult.fund > bestResult.fund) {
-          bestResult = backtestResult;
+        for (
+          let closeAvgVolFactor = CLOSE_AVG_VOL_FACTOR_SETTING.min;
+          closeAvgVolFactor <= CLOSE_AVG_VOL_FACTOR_SETTING.max;
+          closeAvgVolFactor = getAddedNumber({
+            number: closeAvgVolFactor,
+            addNumber: CLOSE_AVG_VOL_FACTOR_SETTING.step,
+            digit: 2
+          })
+        ) {
+          settingsArray.push({
+            avgVolPeriod,
+            openAvgVolFactor,
+            closeAvgVolFactor,
+            leverage
+          });
         }
-        progressBar.increment();
       }
     }
   }
+  return settingsArray;
+};
 
-  for (let i = 1; i < 100; i++) {
+export const getBestResult = async () => {
+  const progressBar = new SingleBar({}, Presets.shades_classic);
+
+  const settingsArray = getSettingsArray();
+
+  progressBar.start(settingsArray.length, 0);
+
+  let bestResult = { fund: 0 };
+
+  for (const settings of settingsArray) {
+    const { avgVolPeriod, openAvgVolFactor, closeAvgVolFactor, leverage } =
+      settings;
     const backtestResult = await getBacktestResult({
       shouldLogResults: false,
-      avgVolPeriod: bestResult.avgVolPeriod,
-      openAvgVolFactor: bestResult.openAvgVolFactor,
-      closeAvgVolFactor: bestResult.closeAvgVolFactor,
-      leverage: i
+      avgVolPeriod,
+      openAvgVolFactor,
+      closeAvgVolFactor,
+      leverage
     });
-    if (backtestResult) {
+    if (backtestResult && backtestResult.fund > bestResult.fund) {
       bestResult = backtestResult;
-    } else {
-      break;
     }
+    progressBar.increment();
   }
 
   progressBar.stop();
