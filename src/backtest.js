@@ -7,7 +7,8 @@ import {
   INITIAL_FUNDING,
   OPEN_AVG_VOL_FACTOR_SETTING,
   LEVERAGE_SETTING,
-  ORDER_AMOUNT_PERCENT
+  ORDER_AMOUNT_PERCENT,
+  RANDOM_SAMPLE_NUMBER
 } from "../configs/trade-config.js";
 import { getCachedKlineData } from "./cached-data.js";
 import { getSignal } from "./signal.js";
@@ -205,8 +206,8 @@ const getAddedNumber = ({ number, addNumber, digit }) => {
   return Number((number + addNumber).toFixed(digit));
 };
 
-const getSettingsArray = () => {
-  const settingsArray = [];
+const getSettings = () => {
+  const settings = [];
   for (
     let leverage = LEVERAGE_SETTING.min;
     leverage <= LEVERAGE_SETTING.max;
@@ -243,7 +244,7 @@ const getSettingsArray = () => {
             digit: 2
           })
         ) {
-          settingsArray.push({
+          settings.push({
             avgVolPeriod,
             openAvgVolFactor,
             closeAvgVolFactor,
@@ -253,21 +254,33 @@ const getSettingsArray = () => {
       }
     }
   }
-  return settingsArray;
+  return settings;
+};
+
+const getRandomSettings = () => {
+  const samples = [];
+  const settings = getSettings();
+  for (let i = 0; i < RANDOM_SAMPLE_NUMBER; i++) {
+    const randomIndex = Math.floor(Math.random() * settings.length);
+    samples.push(settings[randomIndex]);
+  }
+  return samples;
 };
 
 export const getBestResult = async () => {
+  const settings = getSettings();
+  console.log("Total settings length", settings.length);
+  const randomSettings = getRandomSettings();
+  console.log("Random samples length", randomSettings.length);
+
   const progressBar = new SingleBar({}, Presets.shades_classic);
-
-  const settingsArray = getSettingsArray();
-
-  progressBar.start(settingsArray.length, 0);
+  progressBar.start(RANDOM_SAMPLE_NUMBER, 0);
 
   let bestResult = { fund: 0 };
 
-  for (const settings of settingsArray) {
+  for (const setting of randomSettings) {
     const { avgVolPeriod, openAvgVolFactor, closeAvgVolFactor, leverage } =
-      settings;
+      setting;
     const backtestResult = await getBacktestResult({
       shouldLogResults: false,
       avgVolPeriod,
