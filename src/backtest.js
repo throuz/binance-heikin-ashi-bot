@@ -258,13 +258,16 @@ const getSettings = () => {
 };
 
 const getRandomSettings = () => {
-  const samples = [];
   const settings = getSettings();
-  for (let i = 0; i < RANDOM_SAMPLE_NUMBER; i++) {
-    const randomIndex = Math.floor(Math.random() * settings.length);
-    samples.push(settings[randomIndex]);
+  if (RANDOM_SAMPLE_NUMBER) {
+    const samples = [];
+    for (let i = 0; i < RANDOM_SAMPLE_NUMBER; i++) {
+      const randomIndex = Math.floor(Math.random() * settings.length);
+      samples.push(settings[randomIndex]);
+    }
+    return samples;
   }
-  return samples;
+  return settings;
 };
 
 export const getBestResult = async () => {
@@ -274,7 +277,7 @@ export const getBestResult = async () => {
   console.log("Random samples length", randomSettings.length);
 
   const progressBar = new SingleBar({}, Presets.shades_classic);
-  progressBar.start(RANDOM_SAMPLE_NUMBER, 0);
+  progressBar.start(randomSettings.length, 0);
 
   let bestResult = { fund: 0 };
 

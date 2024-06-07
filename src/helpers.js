@@ -170,7 +170,7 @@ export const getLTHAKlineData = async () => {
   const params = {
     symbol: SYMBOL,
     interval: LONG_TERM_KLINE_INTERVAL,
-    limit: KLINE_LIMIT
+    limit: 1500
   };
   const klineData = await klineDataAPI(params);
   const openPrices = klineData.map((kline) => Number(kline[1]));
