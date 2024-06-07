@@ -13,6 +13,6 @@ export const AVG_VOL_PERIOD_SETTING = { min: 1, max: 50, step: 1 };
 export const OPEN_AVG_VOL_FACTOR_SETTING = { min: 0.5, max: 1, step: 0.05 };
 export const CLOSE_AVG_VOL_FACTOR_SETTING = { min: 1, max: 3, step: 0.05 };
 export const LEVERAGE_SETTING = { min: 1, max: 50, step: 1 };
-export const RANDOM_SAMPLE_NUMBER = null; // recommend 10000
+export const RANDOM_SAMPLE_NUMBER = 100000; // recommend 100000
 export const KLINE_START_TIME = null; // timestamp
 export const IS_KLINE_START_TIME_TO_NOW = false;
