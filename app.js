@@ -74,6 +74,9 @@ const executeStrategy = async () => {
         await setSignalConfigs();
       }
     }
+    if (positionType === "NONE" && signal === "NONE") {
+      await setSignalConfigs();
+    }
   } catch (error) {
     await errorHandler(error);
   }
