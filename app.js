@@ -12,6 +12,7 @@ import { getSignal } from "./src/signal.js";
 import { closePosition, openPosition } from "./src/trade.js";
 
 const setSignalConfigs = async () => {
+  console.log(new Date().toLocaleString());
   const bestResult = await getBestResult();
   const {
     isStillHasPosition,
